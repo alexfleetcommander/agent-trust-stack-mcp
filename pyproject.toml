@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-trust-stack-mcp"
+version = "0.1.0"
+description = "MCP server exposing Agent Trust Stack tools — Chain of Consciousness provenance logging and Agent Rating Protocol reputation scoring for autonomous AI agents"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "AB Support Research Team", email = "alex@vibeagentmaking.com" },
+]
+keywords = [
+    "mcp", "model-context-protocol", "agent", "trust", "provenance",
+    "reputation", "chain-of-consciousness", "rating-protocol",
+    "autonomous-agents", "AI", "infrastructure",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "mcp>=1.2.0",
+]
+
+[project.optional-dependencies]
+ots = [
+    "opentimestamps>=0.4.0",
+]
+
+[project.urls]
+Homepage = "https://vibeagentmaking.com"
+Documentation = "https://vibeagentmaking.com/whitepaper/theory-of-agent-trust/"
+Repository = "https://github.com/theory-of-agent-trust/agent-trust-stack-mcp"
+Issues = "https://github.com/theory-of-agent-trust/agent-trust-stack-mcp/issues"
+
+[project.scripts]
+agent-trust-stack-mcp = "agent_trust_stack_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_trust_stack_mcp"]

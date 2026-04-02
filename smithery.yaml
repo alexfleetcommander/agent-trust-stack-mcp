@@ -1,0 +1,28 @@
+# Smithery registry configuration for agent-trust-stack-mcp
+# https://smithery.ai/docs/build/project-config/smithery-yaml
+
+startCommand:
+  type: stdio
+
+configSchema:
+  type: object
+  properties:
+    chainDir:
+      type: string
+      description: "Directory for Chain of Consciousness chain files (default: ./chain)"
+    ratingsDir:
+      type: string
+      description: "Directory for Agent Rating Protocol rating files (default: ./ratings)"
+  required: []
+
+commandFunction: |
+  function(config) {
+    const env = {};
+    if (config.chainDir) env.COC_CHAIN_DIR = config.chainDir;
+    if (config.ratingsDir) env.ARP_RATINGS_DIR = config.ratingsDir;
+    return {
+      command: "agent-trust-stack-mcp",
+      args: [],
+      env: env
+    };
+  }
