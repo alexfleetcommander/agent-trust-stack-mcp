@@ -1,5 +1,7 @@
 # Agent Trust Stack MCP Server
 
+[![SafeSkill 92/100](https://img.shields.io/badge/SafeSkill-92%2F100_Verified%20Safe-brightgreen)](https://safeskill.dev/scan/alexfleetcommander-agent-trust-stack-mcp)
+
 MCP (Model Context Protocol) server exposing the **Agent Trust Stack** tools so any MCP-compatible AI agent can use them natively.
 
 Provides **Chain of Consciousness** (CoC) provenance logging and **Agent Rating Protocol** (ARP) reputation scoring — the two operational protocols from the [7-protocol Agent Trust Stack](https://vibeagentmaking.com).
