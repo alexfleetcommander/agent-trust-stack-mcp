@@ -42,11 +42,14 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP(
     name="agent-trust-stack",
-    version="0.1.0",
+    version="0.1.1",
     description=(
-        "Agent Trust Stack — cryptographic provenance logging (Chain of Consciousness) "
-        "and reputation scoring (Agent Rating Protocol) for autonomous AI agents. "
-        "Part of the 7-protocol Agent Trust Stack from vibeagentmaking.com."
+        "Agent Trust Stack MCP server — cryptographic provenance logging (Chain of "
+        "Consciousness) and decentralized reputation scoring (Agent Rating Protocol) "
+        "for autonomous AI agents. Create tamper-evident audit trails anchored to "
+        "Bitcoin timestamps. Rate agents with bilateral blind evaluation and "
+        "anti-Goodhart protections. Part of the 7-protocol Agent Trust Stack. "
+        "Install: pip install agent-trust-stack-mcp | Docs: vibeagentmaking.com"
     ),
 )
 
