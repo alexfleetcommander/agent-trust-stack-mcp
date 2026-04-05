@@ -1,6 +1,30 @@
 # Smithery registry configuration for agent-trust-stack-mcp
 # https://smithery.ai/docs/build/project-config/smithery-yaml
 
+name: agent-trust-stack-mcp
+description: |
+  MCP server providing cryptographic provenance logging and decentralized reputation scoring
+  for autonomous AI agents. Implements Chain of Consciousness (tamper-evident hash chains with
+  Bitcoin OpenTimestamps anchoring) and Agent Rating Protocol (bilateral blind evaluation with
+  anti-Goodhart protections). Part of the 7-protocol Agent Trust Stack for agent trust,
+  accountability, and coordination infrastructure.
+
+keywords:
+  - agent-trust
+  - provenance
+  - reputation
+  - chain-of-consciousness
+  - mcp
+  - autonomous-agents
+  - cryptography
+  - audit-trail
+  - model-context-protocol
+  - rating-protocol
+
+homepage: https://vibeagentmaking.com
+repository: https://github.com/alexfleetcommander/agent-trust-stack-mcp
+license: Apache-2.0
+
 startCommand:
   type: stdio
 
