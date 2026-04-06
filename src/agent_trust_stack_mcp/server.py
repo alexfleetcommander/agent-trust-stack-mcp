@@ -36,14 +36,23 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
+try:
+    from smithery.decorators import smithery
+except ImportError:
+    # Running locally without smithery package — provide no-op decorator
+    class _NoOp:
+        @staticmethod
+        def server():
+            return lambda fn: fn
+    smithery = _NoOp()
+
 # ---------------------------------------------------------------------------
 # Server instance
 # ---------------------------------------------------------------------------
 
 mcp = FastMCP(
     name="agent-trust-stack",
-    version="0.1.1",
-    description=(
+    instructions=(
         "Agent Trust Stack MCP server — cryptographic provenance logging (Chain of "
         "Consciousness) and decentralized reputation scoring (Agent Rating Protocol) "
         "for autonomous AI agents. Create tamper-evident audit trails anchored to "
@@ -944,6 +953,12 @@ Then add to your MCP client config:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
+
+@smithery.server()
+def create_server():
+    """Create and return the Agent Trust Stack MCP server instance (Smithery deploy)."""
+    return mcp
 
 
 def main():

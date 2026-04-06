@@ -32,6 +32,7 @@ classifiers = [
 ]
 dependencies = [
     "mcp>=1.2.0",
+    "smithery>=0.2.4",
 ]
 
 [project.optional-dependencies]
@@ -51,3 +52,6 @@ agent-trust-stack-mcp = "agent_trust_stack_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_trust_stack_mcp"]
+
+[tool.smithery]
+server = "agent_trust_stack_mcp.server:create_server"
