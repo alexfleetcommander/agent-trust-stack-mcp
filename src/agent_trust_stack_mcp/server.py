@@ -874,6 +874,340 @@ def trust_stack_info() -> str:
     })
 
 
+@mcp.tool()
+def verify_agent_identity(url: str) -> str:
+    """Fetch and validate an agent's identity from a DID document or A2A Agent Card.
+
+    Given a URL pointing to a DID document (did.json) or A2A Agent Card
+    (agent-card.json), fetches the document and validates its structure against
+    the relevant specification.
+
+    For DID documents: checks @context, id format, verificationMethod, service endpoints.
+    For Agent Cards: checks name, provider, capabilities, skills, extensions.
+
+    Requires network access to fetch the document.
+
+    Args:
+        url: URL to a DID document or A2A Agent Card JSON file.
+             Examples:
+               - https://example.com/.well-known/did.json
+               - https://example.com/.well-known/agent-card.json
+
+    Returns:
+        JSON validation report with document type, validity, fields found, and any issues
+    """
+    import urllib.request
+    import ssl
+
+    if not url or not url.strip():
+        return json.dumps({"error": "url is required"})
+
+    url = url.strip()
+
+    # Validate URL format
+    if not url.startswith("https://"):
+        return json.dumps({"error": "URL must use HTTPS for security"})
+
+    result = {
+        "url": url,
+        "document_type": "unknown",
+        "is_valid": False,
+        "fields_found": [],
+        "issues": [],
+        "identity": {},
+    }
+
+    # SSRF guard: block private/internal IPs
+    import socket
+    from urllib.parse import urlparse
+
+    try:
+        hostname = urlparse(url).hostname or ""
+        if hostname in ("localhost", ""):
+            result["issues"].append("URL resolves to localhost — blocked for security")
+            return json.dumps(result)
+        resolved_ips = socket.getaddrinfo(hostname, None)
+        for _family, _type, _proto, _canonname, sockaddr in resolved_ips:
+            ip = sockaddr[0]
+            # Block loopback, link-local, and private ranges
+            if (ip.startswith("127.") or ip.startswith("10.") or
+                    ip.startswith("192.168.") or ip.startswith("169.254.") or
+                    ip == "::1" or ip.startswith("fe80:") or
+                    ip.startswith("172.") and 16 <= int(ip.split(".")[1]) <= 31):
+                result["issues"].append(f"URL resolves to private/internal IP ({ip}) — blocked for security")
+                return json.dumps(result)
+    except socket.gaierror:
+        result["issues"].append(f"DNS resolution failed for {hostname}")
+        return json.dumps(result)
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json, application/did+ld+json",
+                "User-Agent": "agent-trust-stack-mcp/0.1.1",
+            },
+        )
+        ctx = ssl.create_default_context()
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+            raw = resp.read().decode("utf-8")
+        doc = json.loads(raw)
+    except Exception as e:
+        result["issues"].append(f"Fetch failed: {e}")
+        return json.dumps(result)
+
+    # Detect document type
+    if "@context" in doc and any(
+        "did" in str(c) for c in (doc["@context"] if isinstance(doc["@context"], list) else [doc["@context"]])
+    ):
+        result["document_type"] = "did_document"
+        result = _validate_did_document(doc, result)
+    elif "name" in doc and ("capabilities" in doc or "skills" in doc or "provider" in doc):
+        result["document_type"] = "a2a_agent_card"
+        result = _validate_agent_card(doc, result)
+    else:
+        result["issues"].append("Could not determine document type (not a DID document or Agent Card)")
+        return json.dumps(result)
+
+    return json.dumps(result)
+
+
+def _validate_did_document(doc: dict, result: dict) -> dict:
+    """Validate a DID document against W3C DID Core requirements."""
+    # Check @context
+    ctx = doc.get("@context", [])
+    if isinstance(ctx, list) and any("w3.org/ns/did" in str(c) for c in ctx):
+        result["fields_found"].append("@context (valid)")
+    else:
+        result["issues"].append("@context missing required W3C DID context")
+
+    # Check id
+    did_id = doc.get("id", "")
+    if did_id.startswith("did:"):
+        result["fields_found"].append(f"id: {did_id}")
+        result["identity"]["did"] = did_id
+        # Extract method
+        parts = did_id.split(":")
+        if len(parts) >= 3:
+            result["identity"]["method"] = parts[1]
+    else:
+        result["issues"].append("id must be a valid DID (did:method:identifier)")
+
+    # Check verificationMethod
+    vm = doc.get("verificationMethod", [])
+    if vm:
+        result["fields_found"].append(f"verificationMethod: {len(vm)} method(s)")
+        for m in vm:
+            mtype = m.get("type", "unknown")
+            mid = m.get("id", "unknown")
+            result["fields_found"].append(f"  key: {mid} ({mtype})")
+    else:
+        result["issues"].append("No verificationMethod found (recommended)")
+
+    # Check authentication
+    auth = doc.get("authentication", [])
+    if auth:
+        result["fields_found"].append(f"authentication: {len(auth)} method(s)")
+
+    # Check assertionMethod
+    assert_m = doc.get("assertionMethod", [])
+    if assert_m:
+        result["fields_found"].append(f"assertionMethod: {len(assert_m)} method(s)")
+
+    # Check services
+    services = doc.get("service", [])
+    if services:
+        result["fields_found"].append(f"service: {len(services)} endpoint(s)")
+        for svc in services:
+            svc_type = svc.get("type", "unknown")
+            svc_id = svc.get("id", "unknown")
+            result["fields_found"].append(f"  service: {svc_id} ({svc_type})")
+
+    # Check for CoC provenance service
+    coc_services = [s for s in services if "coc" in s.get("id", "").lower() or
+                    "consciousness" in s.get("type", "").lower() or
+                    "provenance" in s.get("type", "").lower()]
+    if coc_services:
+        result["identity"]["has_coc_provenance"] = True
+
+    # Check alsoKnownAs
+    aka = doc.get("alsoKnownAs", [])
+    if aka:
+        result["fields_found"].append(f"alsoKnownAs: {len(aka)} alias(es)")
+        result["identity"]["aliases"] = aka
+
+    # Overall validity
+    has_context = any("w3.org/ns/did" in str(c) for c in (ctx if isinstance(ctx, list) else [ctx]))
+    has_id = did_id.startswith("did:")
+    result["is_valid"] = has_context and has_id and len(result["issues"]) == 0
+
+    return result
+
+
+def _validate_agent_card(doc: dict, result: dict) -> dict:
+    """Validate an A2A Agent Card against the protocol specification."""
+    # Required fields
+    for field in ["name", "description", "version", "url"]:
+        if field in doc:
+            result["fields_found"].append(f"{field}: {str(doc[field])[:80]}")
+        else:
+            result["issues"].append(f"Missing required field: {field}")
+
+    # Provider
+    provider = doc.get("provider", {})
+    if provider:
+        result["fields_found"].append(f"provider: {provider.get('name', 'unknown')}")
+        result["identity"]["provider"] = provider.get("name")
+        if provider.get("url"):
+            result["identity"]["provider_url"] = provider["url"]
+    else:
+        result["issues"].append("Missing provider field")
+
+    # Capabilities
+    caps = doc.get("capabilities", {})
+    if caps:
+        cap_list = [k for k, v in caps.items() if v is True]
+        result["fields_found"].append(f"capabilities: {', '.join(cap_list) if cap_list else 'none enabled'}")
+    else:
+        result["issues"].append("Missing capabilities field")
+
+    # Skills
+    skills = doc.get("skills", [])
+    if skills:
+        result["fields_found"].append(f"skills: {len(skills)} skill(s)")
+        for s in skills:
+            result["fields_found"].append(f"  skill: {s.get('id', 'unknown')} — {s.get('name', 'unnamed')}")
+
+    # Security
+    sec_schemes = doc.get("securitySchemes", {})
+    if sec_schemes:
+        result["fields_found"].append(f"securitySchemes: {', '.join(sec_schemes.keys())}")
+    security = doc.get("security", [])
+    if security:
+        result["fields_found"].append(f"security: {len(security)} scheme group(s)")
+
+    # Extensions (look for CoC provenance)
+    extensions = doc.get("extensions", [])
+    if extensions:
+        result["fields_found"].append(f"extensions: {len(extensions)}")
+        for ext in extensions:
+            ext_uri = ext.get("uri", "unknown")
+            result["fields_found"].append(f"  extension: {ext_uri}")
+            if "coc" in ext_uri.lower() or "provenance" in ext_uri.lower():
+                result["identity"]["has_coc_provenance"] = True
+                ext_data = ext.get("data", {})
+                if ext_data:
+                    result["identity"]["chain_length"] = ext_data.get("chain_length")
+                    result["identity"]["genesis_hash"] = ext_data.get("genesis_hash")
+
+    # Interfaces
+    interfaces = doc.get("interfaces", [])
+    if interfaces:
+        result["fields_found"].append(f"interfaces: {len(interfaces)}")
+
+    # Identity summary
+    result["identity"]["name"] = doc.get("name")
+    result["identity"]["url"] = doc.get("url")
+
+    # Overall validity
+    required_present = all(field in doc for field in ["name", "description", "version", "url"])
+    result["is_valid"] = required_present and len(result["issues"]) == 0
+
+    return result
+
+
+@mcp.tool()
+def get_trust_evidence() -> str:
+    """Return structured trust evidence for this agent.
+
+    Provides a comprehensive trust evidence package including Chain of Consciousness
+    statistics, anchor counts, latest hash, verification status, and protocol
+    information. This data can be used by other agents to assess trustworthiness.
+
+    No arguments required — reads from the local chain.
+
+    Returns:
+        JSON with chain stats, anchor data, verification result, and protocol metadata
+    """
+    chain = _read_chain()
+
+    if not chain:
+        return json.dumps({
+            "status": "no_chain",
+            "message": "No Chain of Consciousness initialized. Call coc_init first.",
+            "trust_level": "none",
+        })
+
+    report = _verify_chain(chain)
+
+    # Count anchor proofs
+    anchor_dir = os.path.join(CHAIN_DIR, "anchors")
+    ots_count = 0
+    tsa_count = 0
+    if os.path.isdir(anchor_dir):
+        for f in os.listdir(anchor_dir):
+            if f.endswith(".ots"):
+                ots_count += 1
+            elif f.endswith(".tsr"):
+                tsa_count += 1
+
+    # Calculate chain age in days
+    chain_age_days = 0
+    if chain:
+        try:
+            genesis_dt = datetime.fromisoformat(chain[0]["ts"])
+            now = datetime.now(timezone.utc)
+            chain_age_days = (now - genesis_dt).days
+        except (ValueError, KeyError):
+            pass
+
+    evidence = {
+        "status": "active",
+        "trust_level": "verified" if report["is_valid"] else "unverified",
+        "chain": {
+            "length": len(chain),
+            "age_days": chain_age_days,
+            "genesis_timestamp": chain[0]["ts"] if chain else None,
+            "latest_timestamp": chain[-1]["ts"] if chain else None,
+            "genesis_hash": chain[0]["entry_hash"] if chain else None,
+            "head_hash": chain[-1]["entry_hash"] if chain else None,
+            "schema_version": SCHEMA_VERSION,
+            "integrity_verified": report["is_valid"],
+            "verification_error": report.get("error"),
+            "agents": report.get("agents", {}),
+            "event_types": report.get("types", {}),
+            "session_bridges": report.get("session_bridges", 0),
+            "session_mismatches": report.get("session_mismatches", 0),
+        },
+        "anchoring": {
+            "chain_anchor_events": len(report.get("anchors", [])),
+            "ots_proofs": ots_count,
+            "tsa_proofs": tsa_count,
+            "anchor_types": ["OpenTimestamps/Bitcoin", "RFC3161/TSA"],
+            "latest_anchor": report["anchors"][-1] if report.get("anchors") else None,
+        },
+        "identity": {
+            "did": "did:web:vibeagentmaking.com",
+            "agent_card": "https://vibeagentmaking.com/.well-known/agent-card.json",
+            "did_document": "https://vibeagentmaking.com/.well-known/did.json",
+        },
+        "verification_endpoints": {
+            "chain_data": "https://vibeagentmaking.com/chain/chain.jsonl",
+            "chain_verify": "https://vibeagentmaking.com/verify/",
+            "anchor_proofs": "https://vibeagentmaking.com/chain/anchors/",
+        },
+        "protocols": {
+            "name": "Agent Trust Stack",
+            "website": "https://vibeagentmaking.com",
+            "count": 7,
+            "mcp_server": "pip install agent-trust-stack-mcp",
+            "full_stack": "pip install agent-trust-stack",
+        },
+    }
+
+    return json.dumps(evidence)
+
+
 # ---------------------------------------------------------------------------
 # MCP Resources
 # ---------------------------------------------------------------------------
