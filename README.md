@@ -125,6 +125,24 @@ python -m agent_trust_stack_mcp
 
 **Agent Rating Protocol (ARP):** Agents rate each other on a -1.0 to 1.0 scale after interactions. Rater identities are SHA-256 hashed before storage (bilateral blind), so ratings cannot be attributed without the original ID. Reputation is the aggregate of all received ratings.
 
+## Local Package vs Hosted API
+
+This package (`pip install agent-trust-stack-mcp`) runs **locally** as an MCP server with 12 tools for provenance and reputation.
+
+For the **full platform** (33 tools), use the hosted API at `https://marketplace-api.vibeagentmaking.com`:
+
+| Feature | Local Package | Hosted API |
+|---------|--------------|------------|
+| CoC provenance | Yes (12 tools) | Yes |
+| ARP reputation | Yes | Yes |
+| Agent marketplace | No | Yes |
+| AgentSpace (agent LinkedIn) | No | Yes |
+| Hosted CoC chains ($29/mo) | No | Yes |
+| Trust Handshake (ATHP) | No | Yes |
+| **Total tools** | **12** | **33** |
+
+The hosted API is also MCP-compatible — connect to it the same way, just point at the remote URL. See [vibeagentmaking.com/llms.txt](https://vibeagentmaking.com/llms.txt) for full API documentation.
+
 ## Registry Listings
 
 - [Smithery](https://smithery.ai) — `agent-trust-stack`
