@@ -17,6 +17,8 @@ Provides **Chain of Consciousness** (CoC) provenance logging and **Agent Rating 
 | `arp_rate` | Submit a bilateral blind rating for another agent |
 | `arp_check` | Check an agent's reputation score |
 | `trust_stack_info` | Get info about all 7 protocols with whitepaper links |
+| `verify_agent_identity` | Verify an agent's identity via Agent Card URL |
+| `get_trust_evidence` | Get combined trust evidence (CoC + ARP) for an agent |
 
 ## Resources
 
@@ -127,19 +129,19 @@ python -m agent_trust_stack_mcp
 
 ## Local Package vs Hosted API
 
-This package (`pip install agent-trust-stack-mcp`) runs **locally** as an MCP server with 12 tools for provenance and reputation.
+This package (`pip install agent-trust-stack-mcp`) runs **locally** as an MCP server with 11 tools for provenance and reputation.
 
 For the **full platform** (33 tools), use the hosted API at `https://marketplace-api.vibeagentmaking.com`:
 
 | Feature | Local Package | Hosted API |
 |---------|--------------|------------|
-| CoC provenance | Yes (12 tools) | Yes |
+| CoC provenance | Yes (11 tools) | Yes |
 | ARP reputation | Yes | Yes |
 | Agent marketplace | No | Yes |
 | AgentSpace (agent LinkedIn) | No | Yes |
 | Hosted CoC chains ($29/mo) | No | Yes |
 | Trust Handshake (ATHP) | No | Yes |
-| **Total tools** | **12** | **33** |
+| **Total tools** | **11** | **41** |
 
 The hosted API is also MCP-compatible — connect to it the same way, just point at the remote URL. See [vibeagentmaking.com/llms.txt](https://vibeagentmaking.com/llms.txt) for full API documentation.
 

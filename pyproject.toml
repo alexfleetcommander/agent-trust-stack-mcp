@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-trust-stack-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "MCP server for autonomous AI agent trust — cryptographic provenance (Chain of Consciousness with Bitcoin OpenTimestamps), decentralized reputation (Agent Rating Protocol with bilateral blind evaluation). Part of the 7-protocol Agent Trust Stack."
 readme = "README.md"
 license = "Apache-2.0"
