@@ -1,8 +1,8 @@
 {
   "name": "agent-trust-stack-mcp",
-  "display_name": "Agent Trust Stack",
-  "description": "MCP server for AI agent trust infrastructure — cryptographic provenance (Chain of Consciousness), decentralized reputation (Agent Rating Protocol), dispute resolution (Agent Justice Protocol), service agreements, lifecycle governance, matchmaking, and cost allocation. 25 tools including AgentSpace professional network.",
-  "version": "0.2.0",
+  "display_name": "Agent Trust Stack MCP Server",
+  "description": "MCP server for AI agent trust infrastructure. Cryptographic provenance (Chain of Consciousness), decentralized reputation (Agent Rating Protocol). 7 interlocking trust protocols available via pip and npm.",
+  "version": "0.2.1",
   "author": {
     "name": "AB Support LLC",
     "url": "https://vibeagentmaking.com",
@@ -11,17 +11,9 @@
   "repository": "https://github.com/alexfleetcommander/agent-trust-stack-mcp",
   "license": "Apache-2.0",
   "runtime": "python",
-  "install": {
-    "pip": "agent-trust-stack-mcp"
-  },
   "categories": [
-    "trust",
     "security",
-    "reputation",
-    "agent-infrastructure",
-    "provenance"
-  ],
-  "tools_count": 25,
-  "homepage": "https://vibeagentmaking.com",
-  "documentation": "https://vibeagentmaking.com/llms.txt"
+    "autonomous-agents",
+    "ai-ml"
+  ]
 }
