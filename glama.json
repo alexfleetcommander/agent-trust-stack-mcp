@@ -1,4 +1,8 @@
 {
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": [
+    "alexfleetcommander"
+  ],
   "name": "agent-trust-stack-mcp",
   "display_name": "Agent Trust Stack MCP Server",
   "description": "MCP server for AI agent trust infrastructure. Cryptographic provenance (Chain of Consciousness), decentralized reputation (Agent Rating Protocol). 7 interlocking trust protocols available via pip and npm.",
