@@ -15,6 +15,8 @@
   "repository": "https://github.com/alexfleetcommander/agent-trust-stack-mcp",
   "license": "Apache-2.0",
   "runtime": "python",
+  "command": "python",
+  "args": ["-m", "agent_trust_stack_mcp.server"],
   "categories": [
     "security",
     "autonomous-agents",
